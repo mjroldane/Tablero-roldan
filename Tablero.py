@@ -1,68 +1,78 @@
 import streamlit as st
 from streamlit_drawable_canvas import st_canvas
 
-# Configuracion de la pagina limpia y ancha
-st.set_page_config(page_title="Tablero de Dibujo", layout="wide")
+# Configuración de página limpia
+st.set_page_config(page_title="Editor de Dibujo", layout="wide")
 
-st.title("Tablero de Dibujo")
-st.markdown("---")
+# Estilo personalizado para el título y márgenes
+st.markdown("""
+    <style>
+    .main {
+        background-color: #0e1117;
+    }
+    .stApp {
+        margin-top: -50px;
+    }
+    </style>
+    """, unsafe_allow_html=True)
 
-# --- SIDEBAR: CONFIGURACION ---
+# --- BARRA LATERAL: HERRAMIENTAS ---
 with st.sidebar:
-    st.header("Configuracion")
+    st.title("Configuración")
     
-    with st.expander("Dimensiones del Lienzo", expanded=True):
-        canvas_width = st.slider("Ancho", 300, 1000, 800, 50)
-        canvas_height = st.slider("Alto", 200, 800, 400, 50)
+    with st.expander("Dimensiones del Lienzo", expanded=False):
+        canvas_width = st.slider("Ancho", 300, 1200, 800, 50)
+        canvas_height = st.slider("Alto", 200, 800, 450, 50)
 
-    with st.expander("Herramientas de Estilo", expanded=True):
-        drawing_mode = st.selectbox(
-            "Herramienta:",
-            ("freedraw", "line", "rect", "circle", "transform", "polygon", "point"),
-            index=0
-        )
-        
-        stroke_width = st.slider('Grosor de linea', 1, 50, 5)
-        
-        col1, col2 = st.columns(2)
-        with col1:
-            stroke_color = st.color_picker("Trazo", "#FFFFFF")
-        with col2:
-            bg_color = st.color_picker("Fondo", "#262730")
-
-    st.info("Tip: Use 'Transform' para mover objetos ya dibujados.")
+    st.markdown("---")
+    
+    drawing_mode = st.selectbox(
+        "Herramienta de dibujo:",
+        ("freedraw", "line", "rect", "circle", "transform", "polygon", "point"),
+    )
+    
+    stroke_width = st.slider("Grosor del trazo", 1, 50, 4)
+    
+    c1, c2 = st.columns(2)
+    with c1:
+        stroke_color = st.color_picker("Color", "#000000")
+    with c2:
+        bg_color = st.color_picker("Fondo", "#EEEEEE")
 
 # --- CUERPO PRINCIPAL ---
-main_col, side_info = st.columns([3, 1])
+col_canvas, col_info = st.columns([4, 1])
 
-with main_col:
-    st.subheader("Lienzo")
-    # Correccion del error: eliminamos el parametro inexistente
-    canvas_result = st_canvas(
-        fill_color="rgba(255, 165, 0, 0.3)",
-        stroke_width=stroke_width,
-        stroke_color=stroke_color,
-        background_color=bg_color,
-        height=canvas_height,
-        width=canvas_width,
-        drawing_mode=drawing_mode,
-        key=f"canvas_{canvas_width}_{canvas_height}"
-    )
+with col_canvas:
+    st.subheader("Área de Trabajo")
+    
+    # Contenedor para el lienzo
+    with st.container():
+        canvas_result = st_canvas(
+            fill_color="rgba(255, 165, 0, 0.3)",
+            stroke_width=stroke_width,
+            stroke_color=stroke_color,
+            background_color=bg_color,
+            height=canvas_height,
+            width=canvas_width,
+            drawing_mode=drawing_mode,
+            key=f"canvas_{canvas_width}_{canvas_height}",
+        )
 
-with side_info:
-    st.subheader("Informacion")
-    if canvas_result.json_data is not None:
-        objetos_count = len(canvas_result.json_data["objects"])
-        st.metric("Objetos", objetos_count)
+with col_info:
+    # Panel de información plegable (Meter y Sacar)
+    with st.expander("Panel de Información", expanded=True):
+        if canvas_result.json_data is not None:
+            n_objetos = len(canvas_result.json_data["objects"])
+            st.metric("Objetos en escena", n_objetos)
         
-        if st.button("Reiniciar Aplicacion"):
+        st.markdown("---")
+        st.write("**Atajos:**")
+        st.caption("- Shift: Bloquear ángulos")
+        st.caption("- Supr: Borrar seleccionado")
+        
+        if st.button("Limpiar todo", use_container_width=True):
             st.rerun()
-            
-    st.markdown("""
-    **Controles:**
-    * Click y arrastrar para dibujar.
-    * Seleccione herramientas en el menu lateral.
-    * Los cambios de tamaño limpian el lienzo.
-    """)
 
-st.caption("Aplicacion de Dibujo Profesional")
+# Pie de página simple
+st.markdown("---")
+st.caption("Editor de Gráficos Vectoriales | Prototipo v2.0")
